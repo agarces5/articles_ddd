@@ -1,28 +1,18 @@
 use tokio::test;
 
+use super::article::domain::article::*;
+
 #[test]
 async fn test_get_all() -> anyhow::Result<()> {
     // Creamos una conexión a una base de datos de prueba
-    let mut client = set_tcp_client()?;
+    let client = set_tcp_client()?;
 
     // Creamos un repositorio de artículos utilizando la conexión a la base de datos de prueba
-    let mut article_repo = MssqlArticleRepository::new();
+    let mut article_repo = MssqlArticleRepository::new(client);
 
     // Creamos algunos artículos de prueba en la base de datos
-    let article1 = Article::new(
-        1,
-        String::from("Título 1"),
-        String::from("Contenido 1"),
-        chrono::Utc::now(),
-        chrono::Utc::now(),
-    );
-    let article2 = Article::new(
-        2,
-        String::from("Título 2"),
-        String::from("Contenido 2"),
-        chrono::Utc::now(),
-        chrono::Utc::now(),
-    );
+    let article1 = Article::new(10, String::from("Test 1"), String::from("0101"));
+    let article2 = Article::new(11, String::from("Test 2"), String::from("0101"));
     article_repo.create(&article1).await?;
     article_repo.create(&article2).await?;
 
