@@ -6,22 +6,22 @@ pub struct Article {
 }
 
 impl Article {
-    pub fn new(id: String, name: String, family_id: String) -> Self {
+    pub fn new(id: &str, name: &str, family_id: &str) -> Self {
         Self {
-            id,
-            name,
-            family_id,
+            id: id.to_string(),
+            name: name.to_string(),
+            family_id: family_id.to_string(),
         }
     }
-    // pub fn id(&self) -> &str {
-    //     &self.id
-    // }
-    // pub fn nombre(&self) -> &str {
-    //     &self.nombre
-    // }
-    // pub fn familia(&self) -> &str {
-    //     &self.familia
-    // }
+    pub fn id(&self) -> &str {
+        &self.id
+    }
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+    pub fn family_id(&self) -> &str {
+        &self.family_id
+    }
 }
 
 impl ToString for Article {

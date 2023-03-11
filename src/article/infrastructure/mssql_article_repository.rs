@@ -1,6 +1,7 @@
 use async_trait::async_trait;
 use bigdecimal::BigDecimal;
-use tiberius::{Client, Query};
+use std::collections::HashMap;
+use tiberius::{numeric::Numeric, Client, Query};
 
 use crate::article::domain::{article::Article, article_repository::ArticleRepository};
 
@@ -15,14 +16,25 @@ pub struct MssqlArticleRepository {
 }
 
 impl MssqlArticleRepository {
-    pub async fn new(client: SqlClient) -> Self {
+    pub fn new(client: SqlClient) -> Self {
         Self { client }
     }
 }
 
 #[async_trait]
 impl ArticleRepository for MssqlArticleRepository {
-    async fn save(&self, article: Article) -> anyhow::Result<()> {
+    async fn save(&mut self, article: &Article) -> anyhow::Result<()> {
+        let query =
+            "INSERT INTO Articulo (Articulo, Nombre, Familia) VALUES (@id, @name, @family_id)";
+        let id: i32 = article.id().parse()?;
+        let id = Numeric::new_with_scale(id as i128, 0);
+        let name = String::from(article.name());
+        let family_id = String::from(article.family_id());
+
+        // Execute the query throught &self
+        self.client
+            .execute(query, &[&id, &name, &family_id])
+            .await?;
         Ok(())
     }
     async fn calc_new_id(&self, family_id: String) -> anyhow::Result<String> {

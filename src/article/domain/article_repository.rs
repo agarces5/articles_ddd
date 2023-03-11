@@ -4,7 +4,7 @@ use crate::article::domain::article::Article;
 
 #[async_trait]
 pub trait ArticleRepository {
-    async fn save(&self, article: Article) -> anyhow::Result<()>;
+    async fn save(&mut self, article: &Article) -> anyhow::Result<()>;
     async fn calc_new_id(&self, family_id: String) -> anyhow::Result<String>;
     async fn get_all(&mut self) -> anyhow::Result<Vec<Article>>;
     async fn find_by_id(&self, id: String) -> anyhow::Result<Article>;
