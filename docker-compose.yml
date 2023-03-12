@@ -12,5 +12,6 @@ services:
       MSSQL_PID: Express
     volumes:
       - ./sql:/sql
+      - ./sql_test:/sql_test
     #   - ~/dev/articulos_senator/sqlserver-data:/var/opt/mssql
 
