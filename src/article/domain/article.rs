@@ -1,20 +1,20 @@
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct Article {
-    id: String,
+    id: i32,
     name: String,
     family_id: String,
 }
 
 impl Article {
-    pub fn new(id: &str, name: &str, family_id: &str) -> Self {
+    pub fn new(id: i32, name: &str, family_id: &str) -> Self {
         Self {
-            id: id.to_string(),
+            id,
             name: name.to_string(),
             family_id: family_id.to_string(),
         }
     }
-    pub fn id(&self) -> &str {
-        &self.id
+    pub fn id(&self) -> i32 {
+        self.id
     }
     pub fn name(&self) -> &str {
         &self.name

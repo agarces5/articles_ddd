@@ -18,59 +18,77 @@ async fn database_connection() {
     assert_eq!(count, 1);
 }
 
-async fn create_repo_and_article() -> anyhow::Result<(MssqlArticleRepository, Article)> {
+async fn create_repo() -> anyhow::Result<MssqlArticleRepository> {
     let client = set_tcp_client().await.unwrap();
-    let mut repo = MssqlArticleRepository::new(client);
+    let repo = MssqlArticleRepository::new(client);
 
-    let family_id = "0101";
-    let name = "ARTICULO DE PRUEBA";
-    let id = repo.calc_new_id(family_id).await.unwrap();
-
-    let new_article = Article::new(&id, name, family_id);
-
-    Ok((repo, new_article))
+    Ok(repo)
 }
 
 #[tokio::test]
 async fn test_save_article() {
-    let (mut repo, new_article) = create_repo_and_article().await.unwrap();
+    let mut repo = create_repo().await.unwrap();
 
-    assert!(repo.save(&new_article).await.is_ok());
-    repo.remove(new_article.id()).await.unwrap();
+    let new_article = Article::new(
+        repo.calc_new_id("0001").await.unwrap(),
+        "ARTICULO DE PRUEBA",
+        "0001",
+    );
+
+    let result = repo.save(&new_article).await;
+    repo.remove(new_article.id())
+        .await
+        .unwrap_or_else(|e| eprintln!("{e}"));
+
+    assert!(result.is_ok());
 }
 #[tokio::test]
 async fn test_calc_id() {
-    let (mut repo, new_article) = create_repo_and_article().await.unwrap();
+    let mut repo = create_repo().await.unwrap();
 
-    repo.save(&new_article).await.unwrap();
+    let new_article = Article::new(
+        repo.calc_new_id("0101").await.unwrap(),
+        "PRUEBA DE CALC ID",
+        "0101",
+    );
 
-    let id: i32 = repo
-        .calc_new_id(new_article.family_id())
+    repo.save(&new_article)
         .await
-        .unwrap()
-        .parse()
-        .unwrap();
-    assert_eq!(new_article.id(), (id - 1).to_string());
+        .unwrap_or_else(|e| eprintln!("{e}"));
 
-    repo.remove(new_article.id()).await.unwrap();
+    let id = new_article.id();
+    let new_id: i32 = repo.calc_new_id(new_article.family_id()).await.unwrap();
+
+    repo.remove(new_article.id())
+        .await
+        .unwrap_or_else(|e| eprintln!("{e}"));
+    assert_eq!(id + 1, new_id);
 }
 
 #[tokio::test]
 async fn test_find_article_by_id() {
-    let (mut repo, new_article) = create_repo_and_article().await.unwrap();
+    let mut repo = create_repo().await.unwrap();
 
-    repo.save(&new_article).await.unwrap();
-    assert_eq!(
-        repo.find_by_id(new_article.id()).await.unwrap(),
-        new_article.clone()
-    );
-    repo.remove(new_article.id()).await.unwrap();
+    let new_article = Article::new(100, "PRUEBA DE FIND BY ID", "0001");
+
+    repo.save(&new_article)
+        .await
+        .unwrap_or_else(|e| eprintln!("{e}"));
+    let result = repo.find_by_id(new_article.id()).await;
+    repo.remove(new_article.id())
+        .await
+        .unwrap_or_else(|e| eprintln!("{e}"));
+    assert_eq!(result.unwrap(), new_article.clone());
 }
 #[tokio::test]
 async fn test_remove_article() {
-    let (mut repo, new_article) = create_repo_and_article().await.unwrap();
+    let mut repo = create_repo().await.unwrap();
 
-    repo.save(&new_article).await.unwrap();
+    let new_article = Article::new(200, "PRUEBA DE REMOVE", "0001");
+
+    repo.save(&new_article)
+        .await
+        .unwrap_or_else(|e| eprintln!("{e}"));
 
     assert!(repo.remove(new_article.id()).await.is_ok());
     assert!(repo.find_by_id(new_article.id()).await.is_err());

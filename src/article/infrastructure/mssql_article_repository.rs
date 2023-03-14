@@ -19,8 +19,7 @@ impl MssqlArticleRepository {
 impl ArticleRepository for MssqlArticleRepository {
     async fn save(&mut self, article: &Article) -> anyhow::Result<()> {
         let query = "INSERT [WTPV_CALEIA_TEST].[dbo].[TP_ARTICULO] (Articulo, Nombre, Familia, Usuario) VALUES (@P1, @P2, @P3, @P4)";
-        let id: i32 = article.id().parse()?;
-        let id = Numeric::new_with_scale(id as i128, 0);
+        let id = article.id();
         let name = String::from(article.name());
         let family_id = String::from(article.family_id());
 
@@ -30,16 +29,22 @@ impl ArticleRepository for MssqlArticleRepository {
             .await?;
         Ok(())
     }
-    async fn calc_new_id(&mut self, family_id: &str) -> anyhow::Result<String> {
+    async fn calc_new_id(&mut self, family_id: &str) -> anyhow::Result<i32> {
         let query = "SELECT TOP(1) Articulo FROM [WTPV_CALEIA_TEST].[dbo].[TP_ARTICULO] WHERE Familia=@P1 ORDER BY Articulo DESC";
         let row = self.client.query(query, &[&family_id]).await?;
-        let row = row.into_row().await?.unwrap();
-        let res = row
-            .try_get::<Numeric, &str>("Articulo")?
-            .unwrap()
-            .int_part()
-            + 1;
-        Ok(res.to_string())
+        let row = row.into_row().await?;
+        let res = match row {
+            Some(row) => {
+                (row.try_get::<Numeric, &str>("Articulo")?
+                    .unwrap()
+                    .int_part()
+                    + 1) as i32
+            }
+            None => format!("{family_id}00001")
+                .parse()
+                .expect("Failed to convert Article id"),
+        };
+        Ok(res)
     }
     async fn get_all(&mut self) -> anyhow::Result<Vec<Article>> {
         let mut articles = vec![];
@@ -47,16 +52,19 @@ impl ArticleRepository for MssqlArticleRepository {
         let rows = self.client.query(query, &[]).await?;
 
         for row in rows.into_first_result().await? {
-            let id = row.try_get::<&str, &str>("Articulo")?.unwrap();
+            let id = row
+                .try_get::<Numeric, &str>("Articulo")?
+                .unwrap()
+                .int_part();
             let name = row.try_get::<&str, &str>("Nombre")?.unwrap();
             let family_id = row.try_get::<&str, &str>("Familia")?.unwrap();
-            let article = Article::new(id, name, family_id);
+            let article = Article::new(id as i32, name, family_id);
             articles.push(article);
         }
 
         Ok(articles)
     }
-    async fn find_by_id(&mut self, id: &str) -> anyhow::Result<Article> {
+    async fn find_by_id(&mut self, id: i32) -> anyhow::Result<Article> {
         let query = "SELECT * FROM [WTPV_CALEIA_TEST].[dbo].[TP_ARTICULO] WHERE Articulo=@P1";
         let row = self.client.query(query, &[&id]).await?;
 
@@ -68,24 +76,23 @@ impl ArticleRepository for MssqlArticleRepository {
         let id = res
             .try_get::<Numeric, &str>("Articulo")?
             .unwrap()
-            .int_part()
-            .to_string();
+            .int_part();
         let name = res.try_get::<&str, &str>("Nombre")?.unwrap();
         let family_id = res.try_get::<&str, &str>("Familia")?.unwrap();
-        let article = Article::new(&id, name, family_id);
+        let article = Article::new(id as i32, name, family_id);
 
         Ok(article)
     }
     async fn find_by_subname(&mut self, _name: &str) -> anyhow::Result<Article> {
         Ok(Article::default())
     }
-    async fn update_name(&mut self, _id: &str, _new_name: &str) -> anyhow::Result<()> {
+    async fn update_name(&mut self, _id: i32, _new_name: &str) -> anyhow::Result<()> {
         Ok(())
     }
-    async fn update_family(&mut self, _id: &str, _new_family: &str) -> anyhow::Result<()> {
+    async fn update_family(&mut self, _id: i32, _new_family: &str) -> anyhow::Result<()> {
         Ok(())
     }
-    async fn remove(&mut self, id: &str) -> anyhow::Result<()> {
+    async fn remove(&mut self, id: i32) -> anyhow::Result<()> {
         let query = "DELETE FROM [WTPV_CALEIA_TEST].[dbo].[TP_ARTICULO] WHERE Articulo=@P1";
 
         // Execute the query throught &self
