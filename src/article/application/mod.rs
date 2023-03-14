@@ -1,4 +1,3 @@
-pub mod article_service;
 pub mod create_article;
 pub mod find_article;
 pub mod remove_article;

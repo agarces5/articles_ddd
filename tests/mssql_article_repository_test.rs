@@ -1,5 +1,6 @@
 use std::thread;
 
+use articles_ddd::article::application::create_article::CreateArticleUseCase;
 use articles_ddd::article::domain::{article::Article, article_repository::ArticleRepository};
 use articles_ddd::article::infrastructure::create_config::set_tcp_client;
 use articles_ddd::article::infrastructure::mssql_article_repository::MssqlArticleRepository;
@@ -27,18 +28,17 @@ async fn create_repo() -> anyhow::Result<MssqlArticleRepository> {
 }
 #[tokio::test]
 async fn test_save_article() {
-    let mut repo = create_repo().await.unwrap();
+    let mut repo = Box::new(create_repo().await.unwrap());
+    let id = repo.calc_new_id("0001").await.unwrap();
 
-    let new_article = Article::new(
-        repo.calc_new_id("0001").await.unwrap(),
-        "ARTICULO DE PRUEBA",
-        "0001",
-    );
+    let mut create_article_use_case = CreateArticleUseCase::new(repo);
+    let result = create_article_use_case
+        .execute("ARTICULO DE PRUEBA", "0001")
+        .await;
 
-    let result = repo.save(&new_article).await;
-    repo.remove(new_article.id())
-        .await
-        .unwrap_or_else(|e| eprintln!("{e}"));
+    let mut repo = Box::new(create_repo().await.unwrap());
+
+    repo.remove(id).await.unwrap_or_else(|e| eprintln!("{e}"));
 
     assert!(result.is_ok());
 }
