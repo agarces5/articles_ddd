@@ -99,18 +99,17 @@ impl ArticleRepository for MssqlArticleRepository {
 
         Ok(articles)
     }
-    async fn update_name(&mut self, id: i32, new_name: &str) -> anyhow::Result<()> {
+    async fn update(&mut self, id: i32, new_name: &str, new_family: &str) -> anyhow::Result<()> {
         let query = "UPDATE [WTPV_CALEIA_TEST].[dbo].[TP_ARTICULO]
-                           SET Nombre = @P2 WHERE Articulo = @P1";
-        self.client.execute(query, &[&id, &new_name]).await?;
+                            SET Nombre = @P2,
+                               Familia = @P3
+                            WHERE Articulo = @P1";
+        self.client
+            .execute(query, &[&id, &new_name, &new_family])
+            .await?;
         Ok(())
     }
-    async fn update_family(&mut self, id: i32, new_family: &str) -> anyhow::Result<()> {
-        let query = "UPDATE [WTPV_CALEIA_TEST].[dbo].[TP_ARTICULO]
-                           SET Familia = @P2 WHERE Articulo = @P1";
-        self.client.execute(query, &[&id, &new_family]).await?;
-        Ok(())
-    }
+
     async fn remove(&mut self, id: i32) -> anyhow::Result<()> {
         let query = "DELETE FROM [WTPV_CALEIA_TEST].[dbo].[TP_ARTICULO] WHERE Articulo=@P1";
 
