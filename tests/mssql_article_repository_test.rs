@@ -1,3 +1,5 @@
+use std::thread;
+
 use articles_ddd::article::domain::{article::Article, article_repository::ArticleRepository};
 use articles_ddd::article::infrastructure::create_config::set_tcp_client;
 use articles_ddd::article::infrastructure::mssql_article_repository::MssqlArticleRepository;
@@ -92,4 +94,103 @@ async fn test_remove_article() {
 
     assert!(repo.remove(new_article.id()).await.is_ok());
     assert!(repo.find_by_id(new_article.id()).await.is_err());
+}
+
+#[tokio::test]
+async fn test_get_all_by_family_id() {
+    thread::spawn(move || async {
+        let mut repo = create_repo().await.unwrap();
+        let articles = vec![
+            Article::new(301, "Articulo 1", "0001"),
+            Article::new(302, "Articulo 2", "0001"),
+            Article::new(303, "Articulo 3", "0001"),
+            Article::new(304, "Articulo 4", "0001"),
+            Article::new(305, "Articulo 5", "0001"),
+        ];
+        for article in &articles {
+            repo.save(article)
+                .await
+                .expect(&("Failed to save ".to_string() + &article.to_string()));
+        }
+
+        let result = repo.get_all_by_family("0001").await.unwrap();
+
+        for article in &articles {
+            repo.remove(article.id())
+                .await
+                .expect(&("Failed to save ".to_string() + &article.to_string()));
+        }
+        assert_eq!(&result, &articles);
+    });
+}
+
+#[tokio::test]
+async fn test_find_article_by_subname() {
+    thread::spawn(move || async {
+        let mut repo = create_repo().await.unwrap();
+        let articles = vec![
+            Article::new(301, "Articulo 1", "0001"),
+            Article::new(302, "Articulo 2", "0001"),
+            Article::new(303, "Articulo 3", "0001"),
+            Article::new(304, "Articulo 4", "0001"),
+            Article::new(305, "Articulo 5", "0001"),
+        ];
+        for article in &articles {
+            repo.save(article)
+                .await
+                .expect(&("Failed to save ".to_string() + &article.to_string()));
+        }
+
+        let result = repo.find_by_subname("articulo").await.unwrap();
+
+        for article in &articles {
+            repo.remove(article.id())
+                .await
+                .expect(&("Failed to save ".to_string() + &article.to_string()));
+        }
+        assert_eq!(&result, &articles);
+    });
+}
+
+#[tokio::test]
+async fn test_update_article_name() {
+    let mut repo = create_repo().await.unwrap();
+    let article = Article::new(501, "ARTICULO ANTES UPDATE", "0001");
+    let article_updated = Article::new(501, "ARTICULO UPDATED", "0001");
+    repo.save(&article)
+        .await
+        .expect(&("Failed to save ".to_string() + &article.to_string()));
+
+    let article_before = repo.find_by_id(501).await.unwrap();
+    let updated_query = repo.update_name(article.id(), "ARTICULO UPDATED").await;
+    let article_after = repo.find_by_id(501).await.unwrap();
+
+    repo.remove(article.id())
+        .await
+        .expect(&("Failed to save ".to_string() + &article.to_string()));
+
+    assert!(updated_query.is_ok());
+    assert_eq!(article_before, article);
+    assert_eq!(article_after, article_updated);
+}
+#[tokio::test]
+async fn test_update_article_family() {
+    let mut repo = create_repo().await.unwrap();
+    let article = Article::new(601, "ARTICULO UPDATED", "0101");
+    let article_updated = Article::new(601, "ARTICULO UPDATED", "0001");
+    repo.save(&article)
+        .await
+        .expect(&("Failed to save ".to_string() + &article.to_string()));
+
+    let article_before = repo.find_by_id(601).await.unwrap();
+    let updated_query = repo.update_family(article.id(), "0001").await;
+    let article_after = repo.find_by_id(601).await.unwrap();
+
+    repo.remove(article.id())
+        .await
+        .expect(&("Failed to save ".to_string() + &article.to_string()));
+
+    assert!(updated_query.is_ok());
+    assert_eq!(article_before, article);
+    assert_eq!(article_after, article_updated);
 }

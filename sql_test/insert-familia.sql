@@ -2,6 +2,15 @@ USE [WTPV_CALEIA_TEST];
 GO
 SET IDENTITY_INSERT [dbo].[TP_FAMILIA] ON
 GO
+ -- Insert rows into table 'TableName'
+  INSERT INTO [WTPV_CALEIA_TEST].[dbo].[TP_FAMILIA]
+  ( -- columns to insert data into
+   [Familia], [Nombre], [Usuario]
+  )
+  VALUES
+  ( -- first row: values for the columns in the list above
+   '0001', 'PRUEBAS', 'test'
+  )
 INSERT [dbo].[TP_FAMILIA] ([Familia], [Nombre], [Fecha_Modificado], [Usuario], [Codigoid])
 VALUES
 (N'0101', N'AGUA - REFRESCOS', CAST(N'2020-03-05T10:50:29.463' AS DateTime), N'sa', CAST(290 AS Numeric(18, 0))),
