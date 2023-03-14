@@ -1,4 +1,0 @@
-- Da problemas con el multithreading ya que se puede intentar insertar en la DB
-  un articulo con una PK ya cogida. Se puede implementar un reintento en el caso de que
-  de ese error:
-  - `Err` value: Token error: 'Violation of PRIMARY KEY constraint 'PK_TP_ARTICULO.

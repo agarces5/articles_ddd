@@ -2,8 +2,8 @@ use std::thread;
 
 use articles_ddd::article::application::create_article::CreateArticleUseCase;
 use articles_ddd::article::domain::{article::Article, article_repository::ArticleRepository};
-use articles_ddd::article::infrastructure::create_config::set_tcp_client;
-use articles_ddd::article::infrastructure::mssql_article_repository::MssqlArticleRepository;
+use articles_ddd::article::infrastructure::db::create_config::set_tcp_client;
+use articles_ddd::article::infrastructure::db::mssql_article_repository::MssqlArticleRepository;
 
 #[tokio::test]
 async fn database_connection() {
